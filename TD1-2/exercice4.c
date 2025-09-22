@@ -2,30 +2,92 @@
 #include <stdlib.h>
 #include <omp.h>
 
-//Somme de chaque elements de deux tableaux 1D, parallelized with OPENMP
+//Somme de chaque elements d'un tableau 1D, parallelized with OPENMP
+
+// Crée et initialise un tableau de taille N avec des 1.0
+double* tableau_init(int N) {
+    double* a = (double*)malloc(N * sizeof(double));
+    if (a == NULL) {
+        fprintf(stderr, "Erreur d'allocation mémoire\n");
+        return NULL;
+    }
+
+    for (int i = 0; i < N; i++) {
+        a[i] = 1.0;
+    }
+    return a;
+}
+
+double** matrix_init(int N){
+    double** a = (double**)malloc(N * sizeof(double*));
+    if (a == NULL) {
+        fprintf(stderr, "Erreur d'allocation mémoire\n");
+        return NULL;
+    }
+
+    for (int i = 0; i < N; i++) {
+        a[i] = (double*)malloc(N * sizeof(double));
+        if (a[i] == NULL) {
+            fprintf(stderr, "Erreur d'allocation mémoire\n");
+            // Libérer la mémoire déjà allouée avant de retourner
+            for (int j = 0; j < i; j++) {
+                free(a[j]);
+            }
+            free(a);
+            return NULL;
+        }
+        for (int j = 0; j < N; j++) {
+            a[i][j] = 1.0;
+        }
+    }
+    return a;
+}
+
+// Somme parallèle d'un tableau
+double parallel_sum(double* a, int N) {
+    double sum = 0.0;
+
+    #pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < N; i++) {
+        sum += a[i];
+    }
+
+    printf("Sum: %f\n", sum);
+    return sum;
+}
+
+double parallel_matrix_sum(double** a, int N) {
+    double sum = 0.0;
+
+    #pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            sum += a[i][j];
+        }
+    }
+
+    printf("Matrix Sum: %f\n", sum);
+    return sum;
+}
 
 int main() {
-    int N = 1000000;
-    int *tab1 = (int*)malloc(N * sizeof(int));
-    int *tab2 = (int*)malloc(N * sizeof(int));
-    int *tab3 = (int*)malloc(N * sizeof(int));
-    int i;
-    double start, end;
+    int N = 10;
 
-    for (i = 0; i < N; i++) {
-        tab1[i] = i;
-        tab2[i] = i;
+    // Initialisation du tableau
+    double* a = tableau_init(N);
+    if (a == NULL) return 1; // stop si allocation échoue
+    parallel_sum(a, N);
+    free(a); // Libération mémoire
+
+    // Calcul de la somme
+    double** b = matrix_init(N);
+    if (a == NULL) return 1; // stop si allocation échoue
+    parallel_matrix_sum(b, N);
+
+    for (int i = 0; i < N; i++) {
+        free(b[i]);
     }
-
-    //start = omp_get_wtime();
-    #pragma omp parallel for
-    for (i = 0; i < N; i++) {
-        tab3[i] = tab1[i] + tab2[i];
-    }
-    //end = omp_get_wtime();
-
-    free(tab1);
-    free(tab2);
-    free(tab3);
+    free(b); // Libération mémoire
+    
     return 0;
 }
