@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <mpi.h>
 
 int main(int argc, char *argv[]) {
@@ -7,7 +8,17 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    int vector[4] = {10, 20, 30, 40};  // défini seulement sur le processus 0
+    // int vector[4] = {10, 20, 30, 40};  // défini seulement sur le processus 0
+
+    // Initialisation du vecteur avec pointeurs
+    int *vector = (int *)malloc(4 * sizeof(int));
+    if (rank == 0) {
+        vector[0] = 10;
+        vector[1] = 20;
+        vector[2] = 30;
+        vector[3] = 40;
+    }
+
     int value;  // chaque processus va recevoir un seul élément
     int gathered[4];  // buffer pour rassembler les valeurs sur le process 0
 
